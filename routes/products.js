@@ -8,7 +8,7 @@ const { body, param, validationResult } = require('express-validator');
 // ---------------------------------------------------------
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM products ORDER BY id ASC');
+    const rows = await db.all('SELECT * FROM products ORDER BY id ASC');
     res.json({ success: true, count: rows.length, data: rows });
   } catch (err) {
     console.error(err);
@@ -25,10 +25,10 @@ router.get('/:id', param('id').isInt(), async (req, res) => {
     return res.status(400).json({ success: false, errors: errors.array() });
 
   try {
-    const [rows] = await db.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
-    if (rows.length === 0)
+    const row = await db.get('SELECT * FROM products WHERE id = ?', [req.params.id]);
+    if (!row)
       return res.status(404).json({ success: false, error: 'Product not found' });
-    res.json({ success: true, data: rows[0] });
+    res.json({ success: true, data: row });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: 'Failed to fetch product' });
@@ -54,14 +54,14 @@ router.post(
 
     const { name, description, price, image_url, category } = req.body;
     try {
-      const [result] = await db.query(
+      const result = await db.run(
         'INSERT INTO products (name, description, price, image_url, category) VALUES (?, ?, ?, ?, ?)',
         [name, description || '', price, image_url || '', category || 'Pickles']
       );
       res.status(201).json({
         success: true,
         message: 'Product added',
-        data: { id: result.insertId, name, description, price, image_url, category },
+        data: { id: result.lastID, name, description, price, image_url, category },
       });
     } catch (err) {
       console.error(err);
@@ -80,11 +80,11 @@ router.put('/:id', param('id').isInt(), async (req, res) => {
 
   const { name, description, price, image_url, category } = req.body;
   try {
-    const [result] = await db.query(
+    const result = await db.run(
       'UPDATE products SET name = ?, description = ?, price = ?, image_url = ?, category = ? WHERE id = ?',
       [name, description, price, image_url, category, req.params.id]
     );
-    if (result.affectedRows === 0)
+    if (result.changes === 0)
       return res.status(404).json({ success: false, error: 'Product not found' });
     res.json({ success: true, message: 'Product updated' });
   } catch (err) {
@@ -98,8 +98,8 @@ router.put('/:id', param('id').isInt(), async (req, res) => {
 // ---------------------------------------------------------
 router.delete('/:id', param('id').isInt(), async (req, res) => {
   try {
-    const [result] = await db.query('DELETE FROM products WHERE id = ?', [req.params.id]);
-    if (result.affectedRows === 0)
+    const result = await db.run('DELETE FROM products WHERE id = ?', [req.params.id]);
+    if (result.changes === 0)
       return res.status(404).json({ success: false, error: 'Product not found' });
     res.json({ success: true, message: 'Product deleted' });
   } catch (err) {

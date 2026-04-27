@@ -34,47 +34,42 @@ router.post(
     const total_amount =
       typeof req.body.total_amount === 'number' ? Number(req.body.total_amount) : Number(computedTotal.toFixed(2));
 
-    let conn;
     try {
-      conn = await db.getConnection();
-      await conn.beginTransaction();
-
-      const [orderResult] = await conn.query(
+      // Insert order
+      const orderResult = await db.run(
         `INSERT INTO orders (customer_name, phone, address, total_amount, status)
          VALUES (?, ?, ?, ?, 'pending')`,
         [customer_name, phone, address, total_amount]
       );
 
-      const orderId = orderResult.insertId;
-      const itemValues = items.map((item) => [
-        orderId,
-        item.product_id || null,
-        item.name,
-        Number(item.price),
-        Number(item.qty),
-        item.image_url || '',
-        item.category || '',
-      ]);
+      const orderId = orderResult.lastID;
 
-      await conn.query(
-        `INSERT INTO order_items
-          (order_id, product_id, product_name, price, qty, image_url, category)
-         VALUES ?`,
-        [itemValues]
-      );
+      // Insert order items
+      for (const item of items) {
+        await db.run(
+          `INSERT INTO order_items
+            (order_id, product_id, product_name, price, qty, image_url, category)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            orderId,
+            item.product_id || null,
+            item.name,
+            Number(item.price),
+            Number(item.qty),
+            item.image_url || '',
+            item.category || '',
+          ]
+        );
+      }
 
-      await conn.commit();
       res.status(201).json({
         success: true,
         message: 'Order placed successfully',
         data: { id: orderId, status: 'pending', total_amount },
       });
     } catch (err) {
-      if (conn) await conn.rollback();
       console.error(err);
       res.status(500).json({ success: false, error: 'Failed to place order' });
-    } finally {
-      if (conn) conn.release();
     }
   }
 );
@@ -84,18 +79,19 @@ router.post(
 // ---------------------------------------------------------
 router.get('/', async (req, res) => {
   try {
-    const [orders] = await db.query('SELECT * FROM orders ORDER BY created_at DESC');
+    const orders = await db.all('SELECT * FROM orders ORDER BY created_at DESC');
     if (!orders.length) {
       return res.json({ success: true, count: 0, data: [] });
     }
 
     const ids = orders.map((o) => o.id);
-    const [items] = await db.query(
+    const placeholders = ids.map(() => '?').join(',');
+    const items = await db.all(
       `SELECT id, order_id, product_id, product_name, price, qty, image_url, category
        FROM order_items
-       WHERE order_id IN (?)
+       WHERE order_id IN (${placeholders})
        ORDER BY id ASC`,
-      [ids]
+      ids
     );
 
     const itemsByOrderId = new Map();
@@ -132,8 +128,8 @@ router.put(
     }
 
     try {
-      const [result] = await db.query('UPDATE orders SET status = ? WHERE id = ?', [req.body.status, req.params.id]);
-      if (result.affectedRows === 0) {
+      const result = await db.run('UPDATE orders SET status = ? WHERE id = ?', [req.body.status, req.params.id]);
+      if (result.changes === 0) {
         return res.status(404).json({ success: false, error: 'Order not found' });
       }
       res.json({ success: true, message: 'Order status updated' });
@@ -154,8 +150,8 @@ router.delete('/:id', param('id').isInt(), async (req, res) => {
   }
 
   try {
-    const [result] = await db.query('DELETE FROM orders WHERE id = ?', [req.params.id]);
-    if (result.affectedRows === 0) {
+    const result = await db.run('DELETE FROM orders WHERE id = ?', [req.params.id]);
+    if (result.changes === 0) {
       return res.status(404).json({ success: false, error: 'Order not found' });
     }
     res.json({ success: true, message: 'Order deleted' });

@@ -20,14 +20,14 @@ router.post(
 
     const { name, email, message } = req.body;
     try {
-      const [result] = await db.query(
+      const result = await db.run(
         'INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)',
         [name, email, message]
       );
       res.status(201).json({
         success: true,
         message: 'Thank you! We will get back to you soon.',
-        data: { id: result.insertId },
+        data: { id: result.lastID },
       });
     } catch (err) {
       console.error(err);
@@ -41,7 +41,7 @@ router.post(
 // ---------------------------------------------------------
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM contacts ORDER BY created_at DESC');
+    const rows = await db.all('SELECT * FROM contacts ORDER BY created_at DESC');
     res.json({ success: true, count: rows.length, data: rows });
   } catch (err) {
     console.error(err);
