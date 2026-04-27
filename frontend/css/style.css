@@ -899,6 +899,110 @@ h1, h2, h3, h4 {
   padding: 22px;
 }
 
+/* Auth Mode Selector */
+.auth-mode-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.auth-mode-btn {
+  padding: 8px 16px;
+  border: 2px solid rgba(31, 58, 31, 0.2);
+  background: transparent;
+  color: var(--ink-soft);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.auth-mode-btn.active,
+.auth-mode-btn:hover {
+  border-color: var(--forest);
+  background: var(--forest);
+  color: var(--cream);
+}
+
+.auth-mode-btn.active {
+  background: var(--forest);
+  color: var(--cream);
+}
+
+/* Auth Forms */
+.auth-form {
+  display: none;
+}
+
+.auth-form.active {
+  display: block;
+}
+
+/* Google Sign-In Button */
+.btn-google {
+  width: 100%;
+  justify-content: center;
+  background: #fff;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.2s var(--ease);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-google:hover {
+  background: #f8f9fa;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn-google svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* OTP Input Styles */
+.otp-input-group input {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.5rem;
+  font-family: 'Courier New', monospace;
+}
+
+.otp-input-group input::placeholder {
+  letter-spacing: normal;
+  font-weight: 400;
+}
+
+/* Link Button */
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--turmeric);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  margin: 0;
+}
+
+.btn-link:hover {
+  color: var(--saffron);
+}
+
+/* Google Sign-In Container */
+.google-signin-container {
+  margin-bottom: 16px;
+}
+
 .login-demo-box h3 {
   margin-bottom: 10px;
   font-size: 1.2rem;

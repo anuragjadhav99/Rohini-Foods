@@ -3,7 +3,7 @@ const API_BASE =
     ? 'http://localhost:5000/api'
     : '/api';
 
-const ADMIN_EMAIL = 'anuragjadhav684@gmail.com';
+const ADMIN_EMAIL = 'admin@rohini-foods.com';
 const productForm = document.getElementById('productForm');
 const productMsg = document.getElementById('adminMsg');
 const productsTableBody = document.querySelector('#productsTable tbody');
