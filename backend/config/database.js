@@ -1,28 +1,63 @@
-const mysql = require('mysql2');
-require('dotenv').config();
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'rohini_foods',
-  port: process.env.DB_PORT || 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+// Create database file path
+const dbPath = path.join(__dirname, '..', 'database', 'rohini_foods.db');
+
+// Create database connection
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error(' SQLite connection failed:', err.message);
+  } else {
+    console.log(' Connected to SQLite database');
+  }
 });
 
-// Use promise wrapper for async/await
-const db = pool.promise();
+// Enable foreign keys
+db.run('PRAGMA foreign_keys = ON');
 
-// Test the connection on startup
-db.getConnection()
-  .then((conn) => {
-    console.log('✅ Connected to MySQL database:', process.env.DB_NAME);
-    conn.release();
-  })
-  .catch((err) => {
-    console.error('❌ MySQL connection failed:', err.message);
-  });
+// Wrap in promise for consistency with existing code
+const promiseDb = {
+  run: (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+      db.run(sql, params, function(err) {
+        if (err) reject(err);
+        else resolve({ lastID: this.lastID, changes: this.changes });
+      });
+    });
+  },
+  get: (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+      db.get(sql, params, (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+  },
+  all: (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+      db.all(sql, params, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+  },
+  exec: (sql) => {
+    return new Promise((resolve, reject) => {
+      db.exec(sql, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  },
+  close: () => {
+    return new Promise((resolve, reject) => {
+      db.close((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+};
 
-module.exports = db;
+module.exports = promiseDb;

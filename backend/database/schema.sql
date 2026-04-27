@@ -1,72 +1,89 @@
 -- ============================================================
---  Rohini Foods India — Database Schema
---  Run this file in your MySQL server to set up the database.
---  Example (terminal):
---    mysql -u root -p < schema.sql
+--  Rohini Foods India — SQLite Database Schema
+--  This schema is compatible with SQLite database
 -- ============================================================
-
-CREATE DATABASE IF NOT EXISTS rohini_foods
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE rohini_foods;
 
 -- ------------------------------------------------------------
 --  PRODUCTS TABLE
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS products (
-  id          INT AUTO_INCREMENT PRIMARY KEY,
-  name        VARCHAR(150) NOT NULL,
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  name        TEXT NOT NULL,
   description TEXT,
-  price       FLOAT NOT NULL,
-  image_url   VARCHAR(500),
-  category    VARCHAR(80) DEFAULT 'Pickles',
-  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  price       REAL NOT NULL,
+  image_url   TEXT,
+  category    TEXT DEFAULT 'Pickles',
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ------------------------------------------------------------
 --  CONTACTS TABLE
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS contacts (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  name       VARCHAR(100) NOT NULL,
-  email      VARCHAR(150) NOT NULL,
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT NOT NULL,
+  email      TEXT NOT NULL,
   message    TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ------------------------------------------------------------
 --  ORDERS TABLES
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS orders (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  customer_name VARCHAR(120) NOT NULL,
-  phone         VARCHAR(30) NOT NULL,
-  address       VARCHAR(300) NOT NULL,
-  total_amount  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-  status        ENUM('pending', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
-  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_name TEXT NOT NULL,
+  phone         TEXT NOT NULL,
+  address       TEXT NOT NULL,
+  total_amount  REAL NOT NULL DEFAULT 0.00,
+  status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled')),
+  created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS order_items (
-  id           INT AUTO_INCREMENT PRIMARY KEY,
-  order_id     INT NOT NULL,
-  product_id   INT NULL,
-  product_name VARCHAR(150) NOT NULL,
-  price        DECIMAL(10,2) NOT NULL,
-  qty          INT NOT NULL DEFAULT 1,
-  image_url    VARCHAR(500),
-  category     VARCHAR(80),
-  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_order_items_order
-    FOREIGN KEY (order_id) REFERENCES orders(id)
-    ON DELETE CASCADE
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id     INTEGER NOT NULL,
+  product_id   INTEGER,
+  product_name TEXT NOT NULL,
+  price        REAL NOT NULL,
+  qty          INTEGER NOT NULL DEFAULT 1,
+  image_url    TEXT,
+  category     TEXT,
+  created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+
+-- ------------------------------------------------------------
+--  USERS TABLE
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  email       TEXT NOT NULL UNIQUE,
+  password    TEXT NOT NULL,
+  phone       TEXT UNIQUE,
+  name        TEXT,
+  provider    TEXT NOT NULL DEFAULT 'local',
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ------------------------------------------------------------
+--  AUTH OTPs TABLE
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS auth_otps (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  target      TEXT NOT NULL,
+  type        TEXT NOT NULL,
+  code_hash   TEXT NOT NULL,
+  expires_at  DATETIME NOT NULL,
+  used        INTEGER NOT NULL DEFAULT 0,
+  attempts    INTEGER NOT NULL DEFAULT 0,
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ------------------------------------------------------------
 --  SEED DATA — sample products
 -- ------------------------------------------------------------
-INSERT INTO products (name, description, price, image_url, category) VALUES
+INSERT OR IGNORE INTO products (name, description, price, image_url, category) VALUES
 ('Mango Aachar',
  'A classic North Indian mango pickle made with raw Alphonso mangoes, mustard oil, and hand-ground spices. Sun-cured the traditional way.',
  249.00,
